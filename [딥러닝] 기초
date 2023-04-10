@@ -1,0 +1,118 @@
+[인공지능 & 머신러닝 책갈피](https://wikidocs.net/book/5942)
+
+<Tensorflow beginner>
+
+[Google Colaboratory](https://colab.research.google.com/github/tensorflow/docs-l10n/blob/master/site/ko/tutorials/quickstart/beginner.ipynb?hl=ko)
+
+- 머신러닝 vs 딥러닝
+
+![Untitled](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/bcb4a699-e94a-4bcb-a0b1-3cdee7bbe1bf/Untitled.png)
+
+- 머신러닝
+    - 모델이 학습할 수 있는 기능을 사람이 정의
+    - 피처 엔지니어링, 모델 구조, 하이퍼파라미터 등
+- 딥러닝
+    - 사람이 직접 정의한 기능 대신에, **자동으로 특성을 추출하고 학습**할 수 있는 모델을 만드는 것에 집중
+    - **인공 신경망** 사용
+    - 입력 데이터에서 자동으로 특성을 추출 → 다양한 layer를 거쳐 복잡한 패턴을 인식 → 출력 생성
+    - 더욱 복잡하고 대량의 데이터 필요
+
+- **인공 신경망 (Artificial Neural Network, ANN)**
+    - 입력층: 다수의 입력 데이터를 받음
+    - 출력층: 데이터의 출력을 담당
+    - 은닉층: 모델 구성
+    - 은닉층과 노드의 개수를 구성하여 원하는 출력값을 예측
+    
+    ![Untitled](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/56eb94c1-c3b4-4f60-8a64-4a2a324b317b/Untitled.png)
+    
+    - 학습 시간이 너무 느림 → 그래픽 카드의 발전으로 학습 시간 개선
+    - 심층신경망 (Deep Neural Network, DNN) (Fully Connected Network, FCN)
+        - 다층 퍼셉트론 (은닉층이 2개 이상인 신경망)
+        - 인공 신경망의 깊이를 늘려, 더 복잡한 문제를 해결할 수 있는 모델
+        - 다양한 층을 사용 (입력층, 은닉층, 출력층으로 구성)
+        - 은닉층의 수를 늘리면 모델의 복잡도가 증가하며, 학습에 필요한 데이터 양도 증가
+        - 엄청난 수의 연결과 네트워크 매개변수를 필요로 하는 완전 연결 계층
+        - ‘완전히 연결되었다.’ 라는 뜻으로 한층의 모든 뉴런이 다음층의 모든 뉴런과 연결된 상태
+        - 문제: 매우 높은 시간 복잡도 → 미니 배치(Mini Batch), GPU로 학습 속도 향상
+    - 합성곱신경망 (Convolutional Neural Network, CNN)
+        - 이미지 분류 등의 비전 분야에서 많이 사용되는 인공 신경망 모델
+    - 순환신경망 (Recurrent Neural Network, RNN)
+        - 시퀀스 데이터(문장, 음성 등)를 다루는 데 효과적인 인공 신경망
+        - 입력 데이터와 이전에 처리된 출력 데이터를 모두 고려하여 다음 출력을 생성
+        
+- 인공신경망 ANN 의 문제
+    - 학습 시간이 너무 느림
+    
+
+![Untitled](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/20a26680-0f51-4e6c-ba68-ee7cf8a9ff0a/Untitled.png)
+
+![Untitled](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/66e65f0f-bb16-450e-8448-b45981292daf/Untitled.png)
+
+![Untitled](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/c764a2e8-fe91-4548-9f12-c8c35dd3a922/Untitled.png)
+
+- 퍼셉트론 (Perceptron)
+    - 인공신경망의 한 종류
+    - 초기의 인공 신경망
+
+- 활성화함수 (Activation function)
+    - 인공 신경망에서 입력값을 받아 출력값을 계산하는 함수
+    - 은닉층과 출력층의 뉴런에서 출력값을 결정하는 함수
+    - 입력값을 비선형으로 변환
+    - 종류
+        - 시그모이드 (Sigmoid)
+            - 0과 1사이 값 출력
+            - 뉴런의 출력값이 어떤 확률값으로 해석될 때 사용
+            - 장: 모델 제작에 필요한 시간을 줄임
+            - 단: 미분 범위가 짧아 정보가 손실 (Gradient Vanishing)
+            - 활용: Logistic regression(로지스틱 회귀), 이진분류 등
+        - 하이퍼볼릭 탄젠트 (tanh)
+            - -1과 1 사이 출력
+            - 장: 데이터 중심을 0으로 위치시크는 효과가 있어 다음 층의 학습이 더 쉽게 이루어짐
+            - 단: 미분 범위가 짧아 정보가 손실 (Gradient Vanishing)
+        - 렐루 (ReLU)
+            - 입력값이 0보다 작으면 0을, 0보다 크면 입력값 출력
+            - 장: 기울기 소실문제 해결. 미분 계산이 간편하여 학습속도 빠름
+            - 단: Dying Relu(x가 0 이하이면 항상 0을 출력)
+        - 소프트맥스 (Softmax)
+            - 입력값의 지수함수를 정규화하여 출력값을 계산
+
+- 기울기 소실 (Gradient Vanishing)
+    - 깊은 신경망을 학습할 때 역전파 과정에서 입력층으로 갈수록 기울기가 점차 작아지는 현상
+
+- 순전파
+    - 인공 신경망에서 입력층에서 출력층 방향으로 예측값의 연산이 진행되는 과정
+- 역전파
+    - 순전파와 반대로 출력층에서 입력층 방향으로 계산하면서 가중치를 업데이트
+
+- 손실 함수 (Loss Function)
+    - 실제값과 예측값의 차이를 수치화해주는 함수
+
+- 최적화 함수 (Optimizer)
+    - 손실함수를 최소화하는 방향으로 가중치를 갱신하는 알고리즘
+
+- keras
+    - 딥러닝 모델을 만들고 학습시키기 위한 TensorFlow의 상위 수준 API
+    - 신속한 프로토타입 제작, 최첨단 연구 및 프로덕션에 사용
+    - 사용자 친화적, 모듈식 구성 가능, 쉽게 확장 가능
+
+- mnist
+
+- Dense layer
+    - 완전 연결 계층인 밀집층은 내부 뉴런이 이전 계층의 모든 뉴런에 연결되는 계층
+    - 1차원 벡터로 변환된 레이어를 하나의 벡터로 연결
+    - 모든 매개변수가 완전 연결 계층에 점유되기 때문에 과적합이 자주 발생 → 드롭아웃으로 해결
+
+- Flatten
+    - 2차원 데이터를 1차원으로 바꾸는 역할
+
+- 모델의 성능 개선하기
+    - 레이어 변경하기
+    - Dropout 사용하기
+    - early_stop 값 조정하기
+    - epoch 조정하기
+    - learning_rate 조정하기
+    - batch 사용하기
+
+0901 telco 분류 모델 만들기
+0902 mpg 회귀 모델 만들기
+0903 benz 회귀 모델 만들기
