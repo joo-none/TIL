@@ -1,0 +1,248 @@
+- 딥러닝 모델 만들기 (Layer)
+    - BatchNormalization
+        - 입력 데이터의 Batch마다 정규화하는 기법
+        - 학습 과정에서 발생하는 그래디언트 소실과 폭주 문제를 완화
+        - 학습 속도 향상
+    - Dense
+        - 입력과 출력 사이에 모든 뉴런이 연결되어있는 fully connected layer
+        - 입력 데이터의 특징을 추출하고 출력층으로 전달하기 위한 중간 레이어로 사용
+        - 입력 데이터의 크기에 따라 가중치의 개수가 매우 많아져서 학습 과정에서 과적합 문제가 발생할 수 있음
+        - 이를 위해 Dropout이라는 레이어가 사용됨
+    - Dropout
+        - 딥러닝 모델에서 과적합(overfitting) 문제를 완화하기 위한 기법
+        - 학습 과정에서 무작위로 선택된 일부 뉴런을 제거하고, 제거된 뉴런을 고려하지 않은 채 학습을 진행
+        - 이를 통해 모델이 특정 뉴런에 의존하지 않도록 만들어 가중치의 일반화 성능을 향상시키고 과적합을 예방
+
+[자동차 연비 예측하기: 회귀  |  TensorFlow Core](https://www.tensorflow.org/tutorials/keras/regression?hl=ko)
+
+## <자동차 연비 예측하기 - 회귀>
+
+- 라이브러리
+
+```python
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+```
+
+- 데이터
+
+```python
+!unzip mercedes-benz-greener-manufacturing.zip
+```
+
+```python
+base_path = "."
+train = pd.read_csv(f'{base_path}/train.csv.zip', index_col="ID")
+test = pd.read_csv(f'{base_path}/test.csv.zip', index_col="ID")
+submission = pd.read_csv(f'{base_path}/sample_submission.csv.zip', index_col="ID")
+```
+
+```python
+train.shape, test.shape, submission.shape
+```
+
+-categorical_feature 타입 category 로 변경하기
+
+```python
+# categorical_feature
+
+categorical_feature = train.select_dtypes(exclude='number').columns
+categorical_feature
+```
+
+```python
+# 카테고리형으로 변경
+
+# train[categorical_feature] = train[categorical_feature].astype("category")
+# test[categorical_feature]
+
+train[categorical_feature] = train[categorical_feature].astype("category")
+test[categorical_feature] = test[categorical_feature].astype("category")
+
+train.info(), test.info()
+```
+
+-범주형 데이터 OrdinalEncoder 로 인코딩 하기
+
+```python
+# OrdinalEncoder
+# handle_unknown='use_encoded_value', unknown_value=-1
+# X_train[categorical_feature]
+# X_valid[categorical_feature]
+# X_test[categorical_feature]
+
+from sklearn.preprocessing import OrdinalEncoder
+
+oe = OrdinalEncoder(handle_unknown='use_encoded_value', unknown_value=-1)
+train[categorical_feature] = oe.fit_transform(train[categorical_feature])
+test[categorical_feature] = oe.transform(test[categorical_feature])
+```
+
+```python
+train.info(), test.info()
+```
+
+-X, y 만들기
+
+```python
+label_name = 'y'
+
+X = train.drop(columns=label_name)
+y = train[label_name]
+
+X.shape, y.shape
+```
+
+- 데이터셋 나누기
+
+```python
+# train_test_split을 이용해 X, y 값을 X_train, X_valid, y_train, y_valid 으로 나눠줍니다.
+# Hold-out-valiation을 위해 train, valid 세트로 나누기
+# test_size=0.1 => 이름은 test지만 train으로 나눠주었기 때문에 valid 사이즈를 지정한 것입니다.
+
+from sklearn.model_selection import train_test_split
+
+X_train, X_valid, y_train, y_valid = train_test_split(
+     X, y, test_size=0.1, random_state=42)
+
+X_train.shape, X_valid.shape, y_train.shape, y_valid.shape
+```
+
+```python
+# X_test = test
+
+X_test = test
+X_test.shape
+```
+
+- 딥러닝 모델 만들기
+
+```python
+# tensorflow import 
+
+import tensorflow as tf
+```
+
+```python
+# model = tf.keras.Sequential([
+#     tf.keras.layers.BatchNormalization(input_shape=X_train.iloc[0].shape),
+#     tf.keras.layers.Dense(128, activation='relu'),
+#     tf.keras.layers.Dense(64, activation='relu'),
+#     tf.keras.layers.Dense(1)
+# ])
+
+model = tf.keras.Sequential([
+    # tf.keras.layers.BatchNormalization(input_shape=X_train.iloc[0].shape),
+    tf.keras.layers.Dense(units=128, activation='relu', input_shape=X_train.iloc[0].shape),
+    # tf.keras.layers.Dropout(0.1),
+    tf.keras.layers.Dropout(0.2),
+    tf.keras.layers.Dense(units=1)
+])
+
+# BatchNormalization 을 제외한 이유가 무엇일까요?
+# 대부분의 값이 바이너리 값이라서 BatchNormalization 을 제외했습니다.
+```
+
+- 모델 컴파일
+
+```python
+optimizer = tf.keras.optimizers.Adam(0.001)
+
+model.compile(loss="mse", 
+              optimizer=optimizer, 
+              metrics=["mse", "mae"]
+              )
+```
+
+```python
+model.summary()
+```
+
+- 학습
+
+```python
+# batch_size => 분류 모델에서 너무 작을 때 클래스 수가 불균형 하면 제대로 학습되지 못하는 문제가 발생하기도 합니다. 
+# 너무 작으면 제대로 학습하지 못하는 문제가 발생할 수도 있습니다. 
+# 큰 데이터셋에서는 학습 속도를 줄일 수도 있습니다.
+early_stop = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=100)
+
+history = model.fit(X_train, y_train, 
+                    epochs=1000, validation_data=(X_valid, y_valid), 
+                    batch_size=64,
+                    callbacks=[early_stop], verbose=1)
+history
+```
+
+```python
+# df_hist
+
+df_hist = pd.DataFrame(history.history)
+df_hist.tail()
+```
+
+```python
+# loss plot
+
+df_hist[['loss', 'val_loss']].plot()
+```
+
+```python
+# mse plot
+
+df_hist[['mse', 'val_mse']].plot()
+```
+
+- 평가
+
+```python
+# loss, mae, mse = model.evaluate
+
+model.evaluate(X_valid, y_valid)
+```
+
+```python
+# predict
+# y_valid_pred
+
+y_valid_pred = model.predict(X_valid).flatten()
+y_valid_pred
+```
+
+```python
+# jointplot
+sns.jointplot(x=y_valid, y=y_valid_pred, kind="reg")
+```
+
+```python
+from sklearn.metrics import r2_score
+
+r2 = r2_score(y_valid, y_valid_pred)
+r2
+```
+
+- 예측
+
+```python
+# predict
+
+y_predict = model.predict(X_test).flatten()
+y_predict[:5]
+```
+
+- 제출
+
+```python
+submission["y"] = y_predict
+```
+
+```python
+file_name = f"submit_tf_{r2:.5f}.csv"
+file_name
+```
+
+```python
+submission.to_csv(file_name)
+pd.read_csv(file_name).head(2)
+```
