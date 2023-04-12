@@ -1,0 +1,275 @@
+flatten -> 2차원 이미지를 1차원으로 만들어줌
+dense -> unit의 개수 (하이퍼 파라미터)
+
+- 과적합 발생 시
+    - dropout 사용
+    - 전처리
+    - batch 사용
+
+- 모델을 개선하는 방법
+    - 레이어, 유닛 수 변경하기
+    - Dropout 사용하기
+    - early_stop 값 조정하기
+    - epoch 조정하기
+    - learning_rate 조정하기
+    - batch 사용하기
+
+loss => 0 에 가까울 수록 모델의 예측력이 높은 것으로 판단할 수 있습니다.
+분류 => 엔트로피
+회귀 => MSE
+
+- Optimizer
+    - 학습 과정에서 모델의 가중치를 업데이트하고, 더 나은 성능을 얻을 수 있도록 도움
+    - 종류
+        - RMSprop
+            - 학습 속도를 빠르게 하면서도 효과적으로 오버피팅을 방지
+            - 이전 그래디언트들의 제곱값을 지수 이동 평균으로 계산하여 그래디언트의 크기를 보정
+        - Adam
+            - 딥러닝 모델의 최적화를 위한 경사하강법의 한 종류
+            - 신경망에서 가장 효율적인 경사하강법 중 하나
+            - 제곱 그래디언트의 지수 이동 평균을 사용하면서도, 그래디언트의 일차 모멘트와 이차 모멘트를 모두 고려하여 보정
+
+- 딥러닝 레이어
+    - BatchNormalization
+        - 딥러닝 모델에서 입력 데이터의 분포가 넓게 퍼져있거나 균일하지 않은 경우, 그리고 깊은 신경망에서 발생할 수 있는 그래디언트 소실과 폭주를 해결하기 위한 방법
+        - 미니 배치 단위로 정규화하여 입력값을 평균과 분산으로 조정하고 이를 통해 모델의 성능과 학습 속도를 향상시킬 수 있음
+    - Dense
+        - 입력과 출력을 모두 연결하는 완전 연결 계층 (Fully connected layer)
+        - 입력값과 가중치를 행렬곱하여 출력값을 계산하고, 활성화 함수를 통해 출력값을 반환.
+        - 이미지 분류, 회귀, 자연어 처리 등 다양한 딥러닝 모델에서 사용
+        - 레이어의 개수와 유닛 수를 조절하여 모델의 복잡도를 조절
+
+- 딥러닝 모델 학습
+    - calllback
+        - 모델의 훈련 과정에서 특정 시점에 호출되는 함수의 모음
+        - 모델 학습 도중에 정확도(Accuracy), 손실(Loss) 등의 지표를 모니터링하고, 이 지표에 따라 학습률(Learning rate)을 조정하거나 학습을 일찍 중단하는 등의 조치를 취함
+        - Keras에서는 EarlyStopping, ModelCheckpoint, LearningRateScheduler 등의 내장된 callback 함수를 제공
+        - TensorFlow에서는 TensorBoard, ReduceLROnPlateau, CSVLogger 등을 포함한 다양한 callback 함수를 지원
+
+## <자동차 연비 예측하기 - Regression>
+
+- 라이브러리
+
+```python
+# 데이터 분석을 위한 pandas
+# 데이터 시각화를 위한 seaborn을 불러옵니다.
+import pandas as pd
+import seaborn as sns
+```
+
+```python
+# 사용하는 버전
+print(pd.__version__)
+print(sns.__version__)
+```
+
+- 데이터
+
+```python
+# 데이터셋을 불러옵니다.
+df = sns.load_dataset("mpg")
+df.shape
+```
+
+```python
+# 결측치 수를 확인합니다.
+df.isnull().sum()
+```
+
+```python
+# 결측치를 제거합니다.
+df = df.dropna()
+df.shape
+```
+
+```python
+# 문자열 데이터는 별도의 수치데이터로 변환이 필요합니다.
+# 여기에서는 숫자 데이터만 사용합니다.
+
+df = df.select_dtypes('number')
+df.head()
+```
+
+```python
+# describe를 통해 수치 데이터에 대한 기술 통계 값을 확인합니다.
+df.describe()
+```
+
+- 데이터셋 나누기
+
+```python
+label_name = 'mpg'
+```
+
+```python
+# 전체 데이터프레임에서 df, train, test를 분리합니다.
+# X_train : 학습에 사용 (예: 기출문제)
+# X_test : 실제 예측에 사용 (예 : 실전문제)
+# 기출문제로 공부하고 실전 시험을 보는 과정과 유사합니다.
+
+# X_train
+# X_test
+
+# from sklearn.model_selection import train_test_split
+
+# X_train, X_test, y_train, y_test = train_test_split(X, y,
+#                                                     test_size=0.2,
+#                                                     random_state=42)
+
+X_train = df.drop(columns=label_name).sample(frac=0.8, random_state=24)
+X_test = df.drop(columns=label_name).drop(index=X_train.index)
+X_train.shape, X_test.shape
+```
+
+```python
+# train_dataset, test_dataset 에서 label(정답) 값을 꺼내 label 을 따로 생성합니다.
+# 문제에서 정답을 분리하는 과정입니다.
+
+# y_train
+# y_test
+
+y_train = df[label_name].loc[X_train.index]
+y_test = df[label_name].loc[X_test.index]
+y_train.shape, y_test.shape
+```
+
+- 딥러닝 모델 만들기
+
+```python
+# 텐서플로우를 불러옵니다.
+import tensorflow as tf
+
+tf.__version__
+```
+
+```python
+# input_shape 를 쓸 때 이미지든, 정형이든 실수를 많이 할 것 같다면
+# 첫번째 데이터를 가져와서 해당 데이터의 shape 를 그대로 넣어주면 실수를 줄일 수 있습니다.
+X_train.iloc[0].shape
+```
+
+```python
+model = tf.keras.Sequential([
+    tf.keras.layers.BatchNormalization(input_shape=X_train.iloc[0].shape),
+    tf.keras.layers.Dense(units=128, activation='relu'),
+    # tf.keras.layers.Dropout(0.1),
+    tf.keras.layers.Dense(units=64, activation='relu'),
+    tf.keras.layers.Dense(units=1)
+])
+```
+
+```python
+model.summary()
+```
+
+- 모델 컴파일
+
+```python
+optimizer = tf.keras.optimizers.Adam(0.001)
+model.compile(loss='mse',
+                optimizer=optimizer,
+                metrics=['mae', 'mse'])
+```
+
+- 딥러닝 모델로 학습하기
+
+```python
+class PrintDot(tf.keras.callbacks.Callback):
+    def on_epoch_end(self, epoch, logs):
+        if epoch % 100 == 0: print('')
+        print('.', end='')
+
+# val_loss 기준으로 값이 나아지지 않으면 멈추개 합니다.
+early_stop = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=100)
+```
+
+```python
+history = model.fit(X_train, y_train, 
+                    epochs=1000, verbose=0, 
+                    validation_split=0.1,
+                    callbacks=[early_stop, PrintDot()])
+history
+```
+
+```python
+df_hist = pd.DataFrame(history.history)
+df_hist.tail(3)
+```
+
+```python
+# compile 에서 지정한 내용에 대한 결과 값
+# 'loss' => 손실함수 결과
+# 'mae', 'mse' => metric 측정 결과
+# 'val_loss', 'val_mae', 'val_mse' => validation 데이터셋에 대한 결과
+df_hist.columns
+```
+
+```python
+fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(10, 3))
+df_hist[["loss", "val_loss"]].plot(ax=axes[0])
+df_hist[["mae", "val_mae"]].plot(ax=axes[1])
+```
+
+- 딥러닝 모델 평가하기
+
+```python
+loss, mae, mse = model.evaluate(X_test, y_test)
+loss, mae, mse
+```
+
+- 딥러닝 모델 예측하기
+
+```python
+y_predict = model.predict(X_test).flatten()
+y_predict[:5]
+```
+
+- 예측결과 평가하기
+
+```python
+# sns.jointplot
+sns.jointplot(x=y_test, y=y_predict, kind="reg")
+```
+
+```python
+# r2_score
+from sklearn.metrics import r2_score
+
+r2_score(y_test, y_predict)
+```
+
+-MAE
+
+```python
+mae
+```
+
+```python
+error = y_test - y_predict
+mae2 = abs(error).mean()
+mae2
+```
+
+-**MAPE(Mean Absolute Percentage Error)**
+
+```python
+# (실제값 - 예측값 / 실제값)의 절대값에 대한 평균
+
+abs((y_test - y_predict)/y_test).mean()
+```
+
+-**MSE(Mean Squared Error)**
+
+```python
+mse
+```
+
+```python
+((error) ** 2).mean()
+```
+
+RMSE(Root Mean Squared Error)
+
+```python
+mse ** 0.5
+```
