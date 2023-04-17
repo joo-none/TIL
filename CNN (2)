@@ -1,0 +1,62 @@
+- CNN 과정
+
+![Untitled](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/6c510950-612f-4b11-9925-7278fb630750/Untitled.png)
+
+- 층 구성
+    - Conv2D
+    - MaxPool2D
+        - 컨볼루션 레이어의 출력 이미지에서 주요 값만 뽑아 크기가 작은 출력 영상을 생성
+        - 지역적인 사소한 변화가 영향을 미치지 않도록 주의 필요
+    - Flatten
+        - CNN에서 컨볼루션 레이어나 맥스풀링 레이어를 반복적으로 거치면 주요 특징만 추출되고, 추출된 주요 특징은 전결합층에 전달되어 학습될 예정. 전결합층에 전달하기 위해선 1차원 자료로 변경 필요
+    - Dense
+        - 이전 레이어의 모든 노드가 다음 레이어으 ㅣ모든 노드에 연결된 레이어
+        - 이미지 분류를 위한 레이어
+- 컴파일
+    - optimizer
+        - 훈련 과정을 설정
+        - 최적화 알고리즘 설정
+        - adam, sgd, rmsprop, adagrad 등
+    - loss
+        - 손실 함수 설정
+        - binary_crossentropy: 이진 분류
+        - categorical_crossentropy: label(target)이 one-hot vector
+        - sparse_categorical_crossentropy: label(target)이 정수형태
+    - metric
+        - 훈련 및 테스트 중에 모델이 평가할 항목
+        - 분류 → accuracy
+        - 회귀 → mse, rmse, r2, mae, mspe, mape, msle 등
+        - 사용자가 정의해서 사용 가능
+- 요약
+    - layer
+        - 레이어의 이름, 타입
+        - 따로 지정해주고 싶을 때는 Dense의 파라미터 ‘name=’ 설정
+    - output shape
+    - param
+        - 파라미터 수
+        - 각 입력노드와 출력노드에 연결된 간선 수
+- 학습
+    - fit 메서드를 호출하여 훈련 데이터로 모델을 학습
+    - Batch size
+        - 몇 개의 데이터 단위로 매개 변수를 업데이트 하는지 설정하는 값
+        - 실제값과 예측값으로부터 오차를 계산하고 옵티마이저가 가중치를 업데이트
+    - Epoch
+        - 신경망에서 전체 데이터에 대해서 순전파와 역전파가 끝난 상태
+        - 예를 들어, epoch=50 이면 전체 데이터를 총 50번 학습
+    - Iteration
+        - 한 번의 에포크를 끝내기 위해 필요한 배치의 수 또는 한 번의 에포크 내에서 이루어지는 매개변수의 업데이트
+    - EarlyStopping
+        - 모니터링되는 측정 항목이 더 이상 개선되지 않는다면 학습을 중지
+    - 시각화
+        - accuracy: 훈련 정확도
+        - val_accuracy: 검증 정확도
+        - loss: 훈련 손실값
+        - val_loss: 검증 손실값
+- 예측
+- 평가
+    - 분류
+        - loss=’categorical_crossentropy’
+        - metrics=[’accuracy’]
+    - 회귀
+        - loss=’mse’
+        - metrics=[’mae’, ‘mse’]
