@@ -1,0 +1,217 @@
+- 전이학습
+    - 기존의 모델이나 학습된 지식을 새로운 문제나 새로운 도메인에 적용하여 학습을 돕는 ML 방법
+    - 머신러닝 모델을 학습시키는 데에 필요한 데이터와 컴퓨팅 자원을 줄이면서 높은 성능을 얻을 수 있도록 함
+    - 이미 학습된 모델에서 얻은 features를 사용하여 새로운 데이터에 대한 예측을 수행
+    - 이미지 분류, 자연어 처리, 음성 인식 등의 분야에서 사용
+
+- VGG
+    - CNN 아키텍쳐
+    - aodn rlvdms spxmdnjzm rnwhfmf rkwla
+    - 16~19개의 층으로 구성된 모델을 사용
+    - 컨볼루션 레이어와 풀링 레이어가 3*3 크기의 작은 필터 크기를 사용
+    - fully connected layer로 구성된 분류기(classifier)를 포함하여, 입력 이미지 분류 가능
+    - 모델의 복잡성을 줄이고 성능을 향상
+    - 대규모 데이터셋에서 매우 높은 성능
+    - transfer learning (전이학습)을 통해 다른 이미지 분류 문제에도 효과적으로 적용 가능
+
+<실습>
+
+- 라이브러리
+
+```python
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+```
+
+```python
+import tensorflow as tf
+from tensorflow.keras import Sequential
+from tensorflow.keras.layers import Conv2D, MaxPool2D, Dropout, Flatten, Dense
+from tensorflow.keras.callbacks import EarlyStopping
+```
+
+- 이미지 폴더 보기
+
+```python
+# 이미지 다운로드
+!wget https://data.lhncbc.nlm.nih.gov/public/Malaria/cell_images.zip
+```
+
+```python
+# images 폴더에 다운로드 받은 파일 압축 해제하기
+!unzip cell_images.zip
+```
+
+```python
+import os
+for root, dirs, files in os.walk("./cell_images/"):
+    print(root, dirs, len(files))
+```
+
+- 일부 이미지 미리보기
+
+```python
+import glob
+upics = glob.glob('./cell_images/Uninfected/*.png')
+apics = glob.glob('./cell_images/Parasitized/*.png')
+len(upics), upics[0], len(apics), apics[0]
+```
+
+```python
+upics[:5]
+```
+
+```python
+upics[:5]
+```
+
+```python
+# cv2 로 Uninfected 시각화
+import cv2
+
+plt.figure(figsize=(8, 8))
+labels = "Uninfected"
+for i, images in enumerate(upics[:9]):
+    ax = plt.subplot(3, 3, i + 1)
+    img = cv2.imread(images)
+    plt.imshow(img)
+    plt.title(f'{labels} {img.shape}')
+    plt.axis("off")
+```
+
+![Untitled](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/5a6f74d8-9180-4a24-8ed8-c9dffdc98387/Untitled.png)
+
+```python
+# cv2 로 Infected 시각화
+plt.figure(figsize=(8, 8))
+labels = "Infected"
+
+for i, images in enumerate(apics[:9]):
+    ax = plt.subplot(3, 3, i + 1)
+    img = cv2.imread(images)
+    plt.imshow(img)
+    plt.title(f'{labels} {img.shape}')
+    plt.axis("off")
+```
+
+![Untitled](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/bb4d87f9-6ed3-4159-a620-4e49302a8046/Untitled.png)
+
+- 데이터 셋 나누기
+
+```python
+# ImageDataGenerator 를 통해 이미지를 로드하고 전처리 합니다.
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+
+# validation_split 값을 통해 학습:검증 비율을 8:2 로 나눕니다.
+datagen = ImageDataGenerator(rescale=1/255.0, validation_split=0.2)
+```
+
+- 이미지 사이즈 설정
+
+```python
+# 원본 이미지는 100~200 내외입니다.
+width = 64
+height = 64
+```
+
+- 학습 세트
+
+```python
+# flow_from_directory 를 통해 이미지를 불러옵니다.
+trainDatagen = datagen.flow_from_directory(directory = 'cell_images/',
+                                           target_size = (height, width),
+                                           class_mode = 'binary',
+                                           batch_size = 64,
+                                           subset='training')
+```
+
+- 검증 세트
+
+```python
+valDatagen = datagen.flow_from_directory(directory = 'cell_images/',
+                                         target_size =(height, width),
+                                         class_mode = 'binary',
+                                         batch_size = 64,
+                                         subset='validation')
+```
+
+- 레이어 설정
+
+```python
+# tensorflow.keras.applications.vgg16에서 16개의 층을 사용하는 VGG16 모델을 불러옵니다.
+
+# TF Keras 예제 코드
+# 이미지넷 데이터셋 기준 => 1000 개의 분류를 하는 예제
+# classes=1000 예측할 이미지의 종류가 1000개다.
+# classifier_activation='softmax' 출력층의 output
+# 1000 개 종류의 확률값을 반환
+# 이미지넷의 가중치만 사용할 것이지 그대로 분류할게 아니기 때문에 해당 옵션이 필요 없습니다.
+# 미리 구현된 pre-trained model 을 사용해서 혈액도말이미지로 말라리아 감염여부를 예측할 것이기 때문에 클래스 수도 다르고, 
+# 출력층 activation 도 따로 구현해 줄 것이기 때문에 include_top=False 로 나머지도 별도의 레이어로 구성해줍니다.
+
+# tensorflow.keras.applications.vgg19에서 19개의 층을 사용하는 VGG19 모델을 불러옵니다.
+
+# from tensorflow.keras.applications.vgg16 import VGG16
+
+# vgg = VGG16(
+#     include_top=False,
+#     weights='imagenet',
+#     input_shape=(height, width, 3),
+# )
+# model = Sequential()
+# model.add(vgg)
+# model.add(Flatten())
+# model.add(Dense(units=1, activation="sigmoid"))
+```
+
+```python
+# tensorflow.keras.applications.resnet50 에서 ResNet50 을 불러옵니다.
+from tensorflow.keras.applications.resnet50 import ResNet50
+
+res = ResNet50(
+    include_top=False,
+    weights=None,
+    input_shape=(height, width, 3),
+)
+model = Sequential()
+model.add(res)
+model.add(Flatten())
+model.add(Dense(units=1, activation="sigmoid"))
+```
+
+모델 요약
+
+```python
+# summary
+model.summary()
+```
+
+```python
+# tensorflow.keras.utils의 plot_model 을 통한 레이어 시각화
+from tensorflow.keras.utils import plot_model
+
+plot_model(model)
+```
+
+- 컴파일
+
+```python
+# compile
+model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=1e-2), 
+              loss=tf.keras.losses.BinaryCrossentropy(), 
+              metrics=["accuracy"]
+             )
+```
+
+- 학습
+
+```python
+early_stop = EarlyStopping(monitor='val_loss', patience=2)
+```
+
+```python
+# fit
+history = model.fit(trainDatagen, validation_data=valDatagen, 
+                    callbacks=early_stop, epochs=10)
+```
